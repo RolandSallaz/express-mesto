@@ -1,19 +1,53 @@
-const user = require('../models/user');
+const User = require('../models/user');
 
 const getUsers = (req, res) => {
-  return user.find({})
-    .then(data => { res.status(200).send({ users: data }) })
-    .catch(() => { res.status(500).send({ message: "Произошла ошибка" }) });
+  return User.find({})
+    .then(data => {
+      res.status(200)
+        .send({
+          users: data
+        })
+    })
+    .catch(() => {
+      res.status(500)
+        .send({
+          message: "Произошла ошибка"
+        })
+    });
+};
+
+const getUser = (req, res) => {
+  const { id } = req.params;
+  return User.find({ id })
+    .then(data => {
+      res.status(200)
+        .send({
+          user: data
+        })
+    })
+    .catch(() => {
+      res.status(404).send({ message: "Пользователь не найден" });
+    });
 };
 
 const createUser = (req, res) => {
   const { name, about, avatar } = req.body;
-  return user.create({ name, about, avatar })
-    .then(data => { res.status(200).send({ user: data }) })
-    .catch(() => { res.status(500).send({ message: "Произошла ошибка" }) })
+  return User.create({ name, about, avatar })
+    .then(data => {
+      res.status(200)
+        .send({
+          user: data
+        })
+    })
+    .catch(() => {
+      res.status(500).send({
+        message: "Произошла ошибка"
+      })
+    })
 };
 
 module.exports = {
   getUsers,
+  getUser,
   createUser
 }
