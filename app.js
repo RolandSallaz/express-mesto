@@ -10,13 +10,14 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
 });
 app.use((req, res, next) => {
   req.user = {
-    _id: '615491613817a95c804b7056' // вставьте сюда _id созданного в предыдущем пункте пользователя
+    _id: '61559e3776a605b98d7bdcc1' // вставьте сюда _id созданного в предыдущем пункте пользователя
   };
 
   next();
 });
 app.use(express.json());
 app.use('/users', require('./routes/users'));
+app.use('/cards', require('./routes/cards'));
 
 app.listen(PORT, () => {
   console.log(`App listening ons port ${PORT}`)
