@@ -28,9 +28,15 @@ const getUser = (req, res) => {
           user: data
         })
     })
-    .catch(() => {
-      res.status(404).send({ message: "Пользователь не найден" });
-      return;
+    .catch((err) => {
+      if (err.name === "CastError") {
+        res
+          .status(404)
+          .send({ message: "Пользователь не найден" })
+        return;
+      }
+      res.status(500)
+        .send({ message: "Произошла ошибка" });
     });
 };
 
@@ -45,6 +51,12 @@ const createUser = (req, res) => {
         })
     })
     .catch(() => {
+      if (err.name === "ValidationError") {
+        res
+          .status(400)
+          .send({ message: "Переданы некорректные данные при создании пользователя" })
+        return;
+      }
       res
         .status(500)
         .send({
@@ -53,8 +65,63 @@ const createUser = (req, res) => {
     })
 };
 
+const updateUser = (req, res) => {
+  const { name, about } = req.body;
+  return User.findByIdAndUpdate(req.user, { name, about })
+    .then(() => {
+      res
+        .status(200)
+        .send({ message: "Информация о пользователе обновлена" })
+    })
+    .catch(err => {
+      if (err.name === "ValidationError") {
+        res
+          .status(400)
+          .send({ message: "Переданы некорректные данные при обновлении профиля" })
+        return;
+      }
+      if (err.name === "CastError") {
+        res
+          .status(404)
+          .send({ message: "Пользователь не найден" })
+        return;
+      }
+      res
+        .status(500)
+        .send({ message: "Произошла ошибка" })
+    })
+}
+
+const updateUserAvatar = (req, res) => {
+  return User.findByIdAndUpdate(req.user, { avatar: req.body.avatar })
+    .then(() => {
+      res
+        .status(200)
+        .send({ message: "Аватар пользователя обновлен" })
+    })
+    .catch(err => {
+      if (err.name === "ValidationError") {
+        res
+          .status(400)
+          .send({ message: "Переданы некорректные данные при обновлении профиля" })
+        return;
+      }
+      if (err.name === "CastError") {
+        res
+          .status(404)
+          .send({ message: "Пользователь не найден" })
+        return;
+      }
+      res
+        .status(500)
+        .send({ message: "Произошла ошибка" })
+    })
+}
+
 module.exports = {
   getUsers,
   getUser,
-  createUser
+  createUser,
+  updateUser,
+  updateUserAvatar
 }
