@@ -25,7 +25,10 @@ const getUser = (req, res) => {
       res
         .status(200)
         .send({
-          user: data
+          name: data.name,
+          about: data.about,
+          avatar: data.avatar,
+          _id: data._id
         })
     })
     .catch((err) => {
@@ -47,7 +50,10 @@ const createUser = (req, res) => {
       res
         .status(200)
         .send({
-          user: data
+          name: data.name,
+          about: data.about,
+          avatar: data.avatar,
+          _id: data._id
         })
     })
     .catch(() => {

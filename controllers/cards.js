@@ -5,7 +5,7 @@ const getCards = (req, res) => {
     .then(cards => {
       res
         .status(200)
-        .send({ cards })
+        .send(cards)
     })
     .catch(() => {
       res
