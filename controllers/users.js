@@ -41,6 +41,10 @@ const getUser = (req, res) => {
           .send({ message: 'Пользователь не найден' });
         return;
       }
+      if (err.statusCode === 404) {
+        res.status(404).send({ message: err.message });
+        return;
+      }
       res.status(500)
         .send({ message: 'Произошла ошибка' });
     });
@@ -77,6 +81,11 @@ const createUser = (req, res) => {
 const updateUser = (req, res) => {
   const { name, about } = req.body;
   return User.findByIdAndUpdate(req.user, { name, about }, { new: true, runValidators: true })
+    .orFail(() => {
+      const error = new Error('Нет пользователя по заданному id');
+      error.statusCode = 404;
+      throw error;
+    })
     .then(() => {
       res
         .status(200)
@@ -87,6 +96,10 @@ const updateUser = (req, res) => {
         res
           .status(400)
           .send({ message: 'Переданы некорректные данные при обновлении профиля' });
+        return;
+      }
+      if (err.statusCode === 404) {
+        res.status(404).send({ message: err.message });
         return;
       }
       if (err.name === 'CastError') {
@@ -104,6 +117,11 @@ const updateUser = (req, res) => {
 const updateUserAvatar = (req, res) => User.findByIdAndUpdate(req.user,
   { avatar: req.body.avatar },
   { new: true, runValidators: true })
+  .orFail(() => {
+    const error = new Error('Нет пользователя по заданному id');
+    error.statusCode = 404;
+    throw error;
+  })
   .then(() => {
     res
       .status(200)
@@ -120,6 +138,10 @@ const updateUserAvatar = (req, res) => User.findByIdAndUpdate(req.user,
       res
         .status(400)
         .send({ message: 'Пользователь не найден' });
+      return;
+    }
+    if (err.statusCode === 404) {
+      res.status(404).send({ message: err.message });
       return;
     }
     res

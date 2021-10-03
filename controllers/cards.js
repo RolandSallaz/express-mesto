@@ -55,6 +55,10 @@ const deleteCard = (req, res) => Card.findByIdAndDelete(req.params.cardId)
         .send({ message: 'Карточка не найдена' });
       return;
     }
+    if (err.statusCode === 404) {
+      res.status(404).send({ message: err.message });
+      return;
+    }
     res
       .status(500)
       .send({ message: 'Произошла ошибка' });
@@ -75,6 +79,10 @@ const likeCard = (req, res) => Card.findByIdAndUpdate(req.params.cardId,
       res
         .status(400)
         .send({ message: 'Переданы некорректные данные для постановки лайка' });
+      return;
+    }
+    if (err.statusCode === 404) {
+      res.status(404).send({ message: err.message });
       return;
     }
     if (err.name === 'CastError') {
@@ -104,6 +112,10 @@ const dislikeCard = (req, res) => Card.findByIdAndUpdate(req.params.cardId,
       res
         .status(400)
         .send({ message: 'Переданы некорректные данные для снятия лайка' });
+      return;
+    }
+    if (err.statusCode === 404) {
+      res.status(404).send({ message: err.message });
       return;
     }
     if (err.name === 'CastError') {
