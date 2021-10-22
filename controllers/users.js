@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
 const NotFoundError = require('../errors/NotFoundError');
+const AuthError = require('../errors/AuthError');
 
 const getUsers = (req, res, next) => User.find({})
   .then((data) => {
@@ -65,34 +66,25 @@ const updateUserAvatar = (req, res, next) => User.findByIdAndUpdate(req.user,
       .send({ message: 'Аватар пользователя обновлен' });
   })
   .catch(next);
-const login = (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
       res.send({ token });
     })
-    .catch((err) => {
-      if (err.statusCode === 401) {
-        res
-          .status(401)
-          .send({ message: err.message });
-        return;
-      }
-      res
-        .status(500)
-        .send({ message: err.message });
-    });
+    .catch(next);
 };
-const getCurrentUser = (req, res) => {
+const getCurrentUser = (req, res, next) => {
   const { _id } = req.user;
   return User.findById(_id)
-    .then((user) => { res.send({ user }); })
-    .catch(() => {
-      res
-        .status(500)
-        .send({ message: 'Произошла ошибка' });
-    });
+    .then((user) => {
+      if (!user) {
+        throw new AuthError('Необходима авторизация');
+      }
+      res.send({ user });
+    })
+    .catch(next);
 };
 
 module.exports = {
