@@ -37,32 +37,35 @@ const createCard = (req, res) => {
     });
 };
 
-const deleteCard = (req, res) => Card.findByIdAndDelete(req.params.cardId)
-  .orFail(() => {
-    const error = new Error('Нет карточки по заданному id');
-    error.statusCode = 404;
-    throw error;
-  })
-  .then(() => {
-    res
-      .status(200)
-      .send({ message: 'Карточка успешно удалена' });
-  })
-  .catch((err) => {
-    if (err.name === 'CastError') {
+const deleteCard = (req, res) => {
+  const { cardId } = req.params;
+  Card.findOneAndDelete({ _id: cardId, owner: req.user })
+    .orFail(() => {
+      const error = new Error('Нет карточки по заданному id');
+      error.statusCode = 404;
+      throw error;
+    })
+    .then(() => {
       res
-        .status(400)
-        .send({ message: 'Карточка не найдена' });
-      return;
-    }
-    if (err.statusCode === 404) {
-      res.status(404).send({ message: err.message });
-      return;
-    }
-    res
-      .status(500)
-      .send({ message: 'Произошла ошибка' });
-  });
+        .status(200)
+        .send({ message: 'Карточка успешно удалена' });
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res
+          .status(400)
+          .send({ message: 'Карточка не найдена' });
+        return;
+      }
+      if (err.statusCode === 404) {
+        res.status(404).send({ message: err.message });
+        return;
+      }
+      res
+        .status(500)
+        .send({ message: 'Произошла ошибка' });
+    });
+};
 const likeCard = (req, res) => Card.findByIdAndUpdate(req.params.cardId,
   { $addToSet: { likes: req.user._id } },
   { new: true })
