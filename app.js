@@ -7,6 +7,7 @@ const validator = require('validator');
 const { createUser, login } = require('./controllers/users');
 const auth = require('./middlewares/auth');
 const ValidationError = require('./errors/ValidationError');
+const NotFoundError = require('./errors/NotFoundError');
 
 const { PORT = 3000 } = process.env;
 const app = express();
@@ -45,9 +46,7 @@ app.use('/users', require('./routes/users'));
 app.use('/cards', require('./routes/cards'));
 
 app.use(() => {
-  const error = new Error('404 Страница не найдена');
-  error.statusCode = 404;
-  throw error;
+  throw new NotFoundError('404 Страница не найдена');
 });
 app.use(errors());
 app.use((err, req, res, next) => {
