@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const validator = require('validator');
 const AuthError = require('../errors/AuthError');
+const ValidationError = require('../errors/ValidationError');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -20,24 +22,30 @@ const userSchema = new mongoose.Schema({
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
     validate: {
       validator(v) {
-        return /https?:\/\/[a-z0-9\-\.\_\~\:\/\?\#\[\]\@\!\$\&\'\(\)\*\+\,\;\=]{1,}#?$/gi.test(v);
+        return validator.isUrl(v);
       },
-      message: (props) => new Error('Ошибка валидации'),
+      message: () => new ValidationError('Неверно указана ссылка'),
     },
   },
   email: {
     type: String,
     required: true,
     unique: true,
+    validate: {
+      validator(v) {
+        return validator.isEmail(v);
+      },
+      message: () => new ValidationError('Некорректный email'),
+    },
   },
   password: {
     type: String,
-    minlength: 8,
     required: true,
     select: false,
   },
 });
 
+// eslint-disable-next-line func-names
 userSchema.statics.findUserByCredentials = function (email, password) {
   return this.findOne({ email })
     .select('+password')

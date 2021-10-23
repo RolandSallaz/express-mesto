@@ -90,6 +90,7 @@ const login = (req, res, next) => {
           maxAge: 60 * 60 * 24 * 7,
           httpOnly: true,
         })
+        .send('Succes')
         .end();
     })
     .catch(next);

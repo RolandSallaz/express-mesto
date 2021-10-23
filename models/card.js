@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const validator = require('validator');
+const ValidationError = require('../errors/ValidationError');
 
 const cardSchema = new mongoose.Schema({
   name: {
@@ -12,9 +14,9 @@ const cardSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator(v) {
-        return /https?:\/\/[a-z0-9\-\.\_\~\:\/\?\#\[\]\@\!\$\&\'\(\)\*\+\,\;\=]{1,}#?$/gi.test(v);
+        return validator.isUrl(v);
       },
-      message: (props) => new Error('Ошибка валидации'),
+      message: () => new ValidationError('Ошибка валидации'),
     },
   },
   owner: {

@@ -3,12 +3,19 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 const cookieParser = require('cookie-parser');
 const { errors, celebrate, Joi } = require('celebrate');
+const validator = require('validator');
 const { createUser, login } = require('./controllers/users');
 const auth = require('./middlewares/auth');
+const ValidationError = require('./errors/ValidationError');
 
 const { PORT = 3000 } = process.env;
 const app = express();
-
+const validateURL = (value) => {
+  if (!validator.isURL(value, { require_protocol: true })) {
+    throw new ValidationError('Неправильный формат ссылки');
+  }
+  return value;
+};
 mongoose.connect('mongodb://localhost:27017/mestodb', {
   useNewUrlParser: true,
 });
@@ -20,6 +27,9 @@ app.post('/signup', celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().email(),
     password: Joi.string().required().min(8),
+    name: Joi.string().min(2),
+    about: Joi.string().min(2),
+    avatar: Joi.string().custom(validateURL),
   }),
 }), createUser);
 app.post('/signin', celebrate({
@@ -34,8 +44,10 @@ app.use(auth);
 app.use('/users', require('./routes/users'));
 app.use('/cards', require('./routes/cards'));
 
-app.use((req, res) => {
-  res.status(404).send({ message: '404 Страница не найдена' });
+app.use(() => {
+  const error = new Error('404 Страница не найдена');
+  error.statusCode = 404;
+  throw error;
 });
 app.use(errors());
 app.use((err, req, res, next) => {
