@@ -26,21 +26,21 @@ const createCard = (req, res, next) => {
 const deleteCard = (req, res, next) => {
   const { cardId } = req.params;
   const userId = req.user._id;
-  function deleting() {
-    return Card.findByIdAndDelete(cardId)
-      .then(() => {
-        res
-          .send({ message: 'Карточка успешно удалена' });
-      });
-  }
-  Card.findById(cardId)
+  return Card.findById(cardId)
     .then((card) => {
-      if (!card.owner === userId) {
-        throw new NoPermissionError('Вы можете удалять только собственные карточки');
-      } else if (!card) {
+      if (!card) {
         throw new NotFoundError('Нет карточки по заданному id');
       }
-      deleting();
+
+      if (card.owner.toString() !== userId) {
+        throw new NoPermissionError('Вы можете удалять только собственные карточки');
+      }
+      return Card.findByIdAndDelete(cardId)
+        .then(() => {
+          res
+            .send({ message: 'Карточка успешно удалена' });
+        })
+        .catch(next);
     })
     .catch(next);
 };

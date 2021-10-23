@@ -1,10 +1,11 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const validator = require('validator');
 const User = require('../models/user');
 const NotFoundError = require('../errors/NotFoundError');
 const AuthError = require('../errors/AuthError');
 
-const getUsers = (req, res, next) => User.find({})
+const getUsers = (req, res) => User.find({})
   .then((data) => {
     res
       .status(200)
@@ -12,7 +13,7 @@ const getUsers = (req, res, next) => User.find({})
         users: data,
       });
   })
-  .catch(next);
+  .catch();
 
 const getUser = (req, res, next) => {
   const { id } = req.params;
@@ -32,6 +33,13 @@ function createUser(req, res, next) {
   const {
     name, about, avatar, email, password,
   } = req.body;
+  try {
+    if (!validator.isEmail(email)) {
+      throw new AuthError('Некорректный email');
+    }
+  } catch (err) {
+    next(err);
+  }
   bcrypt.hash(password, 10)
     .then((hash) => User.create({
       name, about, avatar, email, password: hash,
@@ -40,10 +48,18 @@ function createUser(req, res, next) {
       res
         .send(user);
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'MongoServerError' && err.code === 11000) {
+        const error = new Error('Данный email уже используется');
+        error.statusCode = 409;
+        next(error);
+        return;
+      }
+      next(err);
+    });
 }
 
-const updateUser = (req, res, next) => {
+function updateUser(req, res, next) {
   const { name, about } = req.body;
   return User.findByIdAndUpdate(req.user, { name, about }, { new: true, runValidators: true })
     .then((user) => {
@@ -54,9 +70,9 @@ const updateUser = (req, res, next) => {
         .send({ message: 'Информация о пользователе обновлена' });
     })
     .catch(next);
-};
-const updateUserAvatar = (req, res, next) => User.findByIdAndUpdate(req.user,
-  { avatar: req.body.avatar },
+}
+const updateUserAvatar = (req, res, next) => User.findByIdAndUpdate(req.user._id,
+  { avatar: req.body.link },
   { new: true, runValidators: true })
   .then((user) => {
     if (!user) {
@@ -68,10 +84,23 @@ const updateUserAvatar = (req, res, next) => User.findByIdAndUpdate(req.user,
   .catch(next);
 const login = (req, res, next) => {
   const { email, password } = req.body;
-  return User.findUserByCredentials(email, password)
+  try {
+    if (!validator.isEmail(email)) {
+      throw new AuthError('Некорректный email');
+    }
+  } catch (err) {
+    next(err);
+  }
+  User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
       res.send({ token });
+      res
+        .cookie('jwt', token, {
+          maxAge: 60 * 60 * 24 * 7,
+          httpOnly: true,
+        })
+        .end();
     })
     .catch(next);
 };
