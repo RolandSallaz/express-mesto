@@ -34,8 +34,10 @@ app.use(auth);
 app.use('/users', require('./routes/users'));
 app.use('/cards', require('./routes/cards'));
 
+app.use((req, res) => {
+  res.status(404).send({ message: '404 Страница не найдена' });
+});
 app.use(errors());
-
 app.use((err, req, res, next) => {
   const { statusCode = 500, message } = err;
   res
@@ -47,9 +49,7 @@ app.use((err, req, res, next) => {
     });
   next();
 });
-app.use((req, res) => {
-  res.status(404).send({ message: '404 Страница не найдена' });
-});
+
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console
   console.log(`App listening ons port ${PORT}`);

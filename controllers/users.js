@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const validator = require('validator');
 const User = require('../models/user');
 const NotFoundError = require('../errors/NotFoundError');
 const AuthError = require('../errors/AuthError');
@@ -33,20 +32,18 @@ function createUser(req, res, next) {
   const {
     name, about, avatar, email, password,
   } = req.body;
-  try {
-    if (!validator.isEmail(email)) {
-      throw new AuthError('Некорректный email');
-    }
-  } catch (err) {
-    next(err);
-  }
+
   bcrypt.hash(password, 10)
     .then((hash) => User.create({
       name, about, avatar, email, password: hash,
     }))
     .then((user) => {
       res
-        .send(user);
+        .send({
+          data: {
+            name: user.name, about: user.about, avatar: user.avatar, email,
+          },
+        });
     })
     .catch((err) => {
       if (err.name === 'MongoServerError' && err.code === 11000) {
@@ -84,17 +81,10 @@ const updateUserAvatar = (req, res, next) => User.findByIdAndUpdate(req.user._id
   .catch(next);
 const login = (req, res, next) => {
   const { email, password } = req.body;
-  try {
-    if (!validator.isEmail(email)) {
-      throw new AuthError('Некорректный email');
-    }
-  } catch (err) {
-    next(err);
-  }
   User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-      res.send({ token });
+      const { JWT_SECRET = 'dd4363ae6ef2daa8a66e2ab5e432ac9c7aea658a6c9da53e7e9d1001531adc71' } = process.env;
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' });
       res
         .cookie('jwt', token, {
           maxAge: 60 * 60 * 24 * 7,
